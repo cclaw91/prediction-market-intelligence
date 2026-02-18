@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Features from './pages/Features';
 import Pricing from './pages/Pricing';
 import Dashboard from './pages/Dashboard';
+import MarketDetail from './pages/MarketDetail';
 import NotFound from './pages/NotFound';
 import './index.css';
 
@@ -15,6 +16,7 @@ function App() {
         <Route path="/features" element={<Features />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/market/:id" element={<MarketDetail />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

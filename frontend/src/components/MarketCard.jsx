@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Volume2, Calendar, ExternalLink } from 'lucide-react';
 
 const MarketCard = ({ market, onAlertClick }) => {
@@ -112,15 +113,13 @@ const MarketCard = ({ market, onAlertClick }) => {
           <Volume2 className="w-4 h-4 mr-2" />
           Set Alert
         </button>
-        <a
-          href={`https://polymarket.com/event/${market.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to={`/market/${market.id}`}
           className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2.5 px-4 rounded-lg text-center transition-all duration-200 flex items-center justify-center"
         >
           View
           <ExternalLink className="w-4 h-4 ml-2" />
-        </a>
+        </Link>
       </div>
     </div>
   );
