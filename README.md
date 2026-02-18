@@ -70,7 +70,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:3000`
+Frontend runs on `http://localhost:3001`
 
 ## 🔌 API Endpoints
 
@@ -205,7 +205,8 @@ prediction-market-tool/
 ## 📝 Notes
 
 - **Backend Port:** 5000 (configurable via `.env`)
-- **Frontend Port:** 3000 (configured in `vite.config.js`)
+- **Frontend Port:** 3001 (configured in `vite.config.js`)
+  - Note: Port 3000 is reserved for OpenClaw Control Center
 - **Database:** SQLite file at `backend/db/markets.db`
 - **Polymarket API:** Public endpoints, no auth required for MVP
 

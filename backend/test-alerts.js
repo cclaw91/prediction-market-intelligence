@@ -78,7 +78,7 @@ async function testAlerts() {
     console.log('✅ Alert check complete:', check.data);
 
     console.log('\n🎉 All tests completed successfully!');
-    console.log('\n📊 Dashboard: http://localhost:3000');
+    console.log('\n📊 Dashboard: http://localhost:3001');
     console.log('🔌 API: http://localhost:5000/api');
 
   } catch (error) {

@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-✅ Frontend running on **http://localhost:3000**
+✅ Frontend running on **http://localhost:3001**
 
 ## Step 3: Test the System (30 seconds)
 
@@ -45,7 +45,7 @@ This will:
 
 ## Step 4: Open Dashboard
 
-Visit **http://localhost:3000** in your browser!
+Visit **http://localhost:3001** in your browser!
 
 You should see:
 - 📊 Live prediction markets from Polymarket
@@ -81,8 +81,8 @@ curl -X POST http://localhost:5000/api/alerts/subscribe \
 # Kill process on port 5000 (backend)
 lsof -ti:5000 | xargs kill -9
 
-# Kill process on port 3000 (frontend)
-lsof -ti:3000 | xargs kill -9
+# Kill process on port 3001 (frontend)
+lsof -ti:3001 | xargs kill -9
 ```
 
 ### Can't Connect to Backend
