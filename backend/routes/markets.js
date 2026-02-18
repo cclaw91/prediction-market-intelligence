@@ -1,47 +1,76 @@
 const express = require('express');
 const router = express.Router();
 const polymarket = require('../services/polymarket');
+const kalshi = require('../services/kalshi');
 const db = require('../db/database');
 
 /**
  * GET /api/markets
- * Fetch and cache markets from Polymarket
+ * Fetch and cache markets from BOTH Polymarket AND Kalshi
  */
 router.get('/', async (req, res) => {
   try {
-    const { limit = 20, category, search } = req.query;
+    const { limit = 20, category, search, source } = req.query;
+    const limitPerSource = Math.ceil(parseInt(limit) / 2);
     
-    // Fetch from Polymarket API
-    const markets = await polymarket.fetchMarkets(parseInt(limit));
+    // Fetch from both APIs in parallel
+    const [polymarketResults, kalshiResults] = await Promise.allSettled([
+      polymarket.fetchMarkets(limitPerSource),
+      kalshi.fetchMarkets(limitPerSource)
+    ]);
     
-    if (!markets || markets.length === 0) {
-      return res.json([]);
+    let allMarkets = [];
+    
+    // Process Polymarket results
+    if (polymarketResults.status === 'fulfilled' && polymarketResults.value?.length > 0) {
+      const polymarketTransformed = polymarketResults.value.map(m => ({
+        ...polymarket.transformMarketData(m),
+        source: 'polymarket'
+      }));
+      allMarkets.push(...polymarketTransformed);
+    } else if (polymarketResults.status === 'rejected') {
+      console.error('Polymarket fetch failed:', polymarketResults.reason?.message);
     }
     
-    // Transform and filter
-    let transformedMarkets = markets.map(polymarket.transformMarketData);
+    // Process Kalshi results
+    if (kalshiResults.status === 'fulfilled' && kalshiResults.value?.length > 0) {
+      const kalshiTransformed = kalshiResults.value.map(kalshi.transformMarketData);
+      allMarkets.push(...kalshiTransformed);
+    } else if (kalshiResults.status === 'rejected') {
+      console.error('Kalshi fetch failed:', kalshiResults.reason?.message);
+    }
     
     // Apply filters
+    if (source) {
+      allMarkets = allMarkets.filter(m => m.source === source);
+    }
+    
     if (category) {
-      transformedMarkets = transformedMarkets.filter(m => 
+      allMarkets = allMarkets.filter(m => 
         m.category?.toLowerCase() === category.toLowerCase()
       );
     }
     
     if (search) {
       const searchLower = search.toLowerCase();
-      transformedMarkets = transformedMarkets.filter(m => 
+      allMarkets = allMarkets.filter(m => 
         m.question?.toLowerCase().includes(searchLower) ||
         m.description?.toLowerCase().includes(searchLower)
       );
     }
     
+    // Sort by score (liquidity + volume)
+    allMarkets.sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    // Limit results
+    allMarkets = allMarkets.slice(0, parseInt(limit));
+    
     // Cache in database
-    for (const market of transformedMarkets) {
+    for (const market of allMarkets) {
       await db.run(`
         INSERT OR REPLACE INTO markets 
-        (id, question, description, category, end_date, liquidity, volume, outcome_prices, score, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        (id, question, description, category, end_date, liquidity, volume, outcome_prices, score, source, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `, [
         market.id,
         market.question,
@@ -50,14 +79,19 @@ router.get('/', async (req, res) => {
         market.end_date,
         market.liquidity,
         market.volume,
-        market.outcome_prices,
-        market.score
+        JSON.stringify(market.outcome_prices),
+        market.score,
+        market.source
       ]);
     }
     
     res.json({
-      count: transformedMarkets.length,
-      markets: transformedMarkets
+      count: allMarkets.length,
+      markets: allMarkets,
+      sources: {
+        polymarket: allMarkets.filter(m => m.source === 'polymarket').length,
+        kalshi: allMarkets.filter(m => m.source === 'kalshi').length
+      }
     });
     
   } catch (error) {
@@ -90,8 +124,8 @@ router.get('/:id', async (req, res) => {
     // Cache it
     await db.run(`
       INSERT OR REPLACE INTO markets 
-      (id, question, description, category, end_date, liquidity, volume, outcome_prices, score, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (id, question, description, category, end_date, liquidity, volume, outcome_prices, score, source, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `, [
       transformed.id,
       transformed.question,
@@ -100,8 +134,9 @@ router.get('/:id', async (req, res) => {
       transformed.end_date,
       transformed.liquidity,
       transformed.volume,
-      transformed.outcome_prices,
-      transformed.score
+      JSON.stringify(transformed.outcome_prices),
+      transformed.score,
+      transformed.source
     ]);
     
     res.json(transformed);

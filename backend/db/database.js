@@ -19,11 +19,22 @@ const initialize = () => {
           volume REAL,
           outcome_prices TEXT,
           score REAL,
+          source TEXT DEFAULT 'polymarket',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `, (err) => {
         if (err) return reject(err);
+        
+        // Add source column if it doesn't exist (migration)
+        db.run(`
+          ALTER TABLE markets ADD COLUMN source TEXT DEFAULT 'polymarket'
+        `, (err) => {
+          // Ignore error if column already exists
+          if (err && !err.message.includes('duplicate column')) {
+            console.error('Migration warning:', err.message);
+          }
+        });
       });
 
       // Alerts table
