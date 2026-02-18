@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, Bell, AlertCircle } from 'lucide-react';
 import { alertAPI } from '../services/api';
 
 const AlertModal = ({ market, onClose, onSuccess }) => {
@@ -9,10 +10,10 @@ const AlertModal = ({ market, onClose, onSuccess }) => {
   const [error, setError] = useState('');
 
   const alertTypes = [
-    { value: 'price_change', label: 'Price Change', description: 'Alert when price moves significantly' },
-    { value: 'volume_spike', label: 'Volume Spike', description: 'Alert when volume exceeds threshold' },
-    { value: 'liquidity_low', label: 'Low Liquidity', description: 'Alert when liquidity drops below threshold' },
-    { value: 'closing_soon', label: 'Closing Soon', description: 'Alert when market closes within 24 hours' },
+    { value: 'price_change', label: 'Price Change', description: 'Alert when price moves significantly', icon: '📈' },
+    { value: 'volume_spike', label: 'Volume Spike', description: 'Alert when volume exceeds threshold', icon: '📊' },
+    { value: 'liquidity_low', label: 'Low Liquidity', description: 'Alert when liquidity drops below threshold', icon: '💧' },
+    { value: 'closing_soon', label: 'Closing Soon', description: 'Alert when market closes within 24 hours', icon: '⏰' },
   ];
 
   const handleSubmit = async (e) => {
@@ -48,101 +49,149 @@ const AlertModal = ({ market, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Set Alert</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-400 rounded-lg flex items-center justify-center">
+              <Bell className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Set Alert</h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="mb-4 p-3 bg-gray-50 rounded">
-          <p className="text-sm font-medium text-gray-900">{market.question}</p>
-          <p className="text-xs text-gray-500 mt-1">Score: {market.score}</p>
+        {/* Market Info */}
+        <div className="p-6 pb-4">
+          <div className="card p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-blue-100">
+            <p className="font-semibold text-gray-900 mb-2 line-clamp-2">{market.question}</p>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Score: <span className="font-semibold text-gray-900">{market.score}</span></span>
+              <span className="badge badge-primary">{market.category || 'Market'}</span>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5">
           {/* Alert Type */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-3">
               Alert Type
             </label>
-            <select
-              value={alertType}
-              onChange={(e) => setAlertType(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <div className="space-y-2">
               {alertTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
+                <label
+                  key={type.value}
+                  className={`flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                    alertType === type.value
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="alertType"
+                    value={type.value}
+                    checked={alertType === type.value}
+                    onChange={(e) => setAlertType(e.target.value)}
+                    className="mt-1 mr-3"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-lg">{type.icon}</span>
+                      <span className="font-semibold text-gray-900">{type.label}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">{type.description}</p>
+                  </div>
+                </label>
               ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              {alertTypes.find((t) => t.value === alertType)?.description}
-            </p>
+            </div>
           </div>
 
-          {/* Threshold (optional for some alert types) */}
+          {/* Threshold (conditional) */}
           {(alertType === 'volume_spike' || alertType === 'liquidity_low') && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Threshold ($)
+            <div className="animate-fade-in">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Threshold Amount
               </label>
-              <input
-                type="number"
-                value={threshold}
-                onChange={(e) => setThreshold(e.target.value)}
-                placeholder="Enter threshold amount"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                <input
+                  type="number"
+                  value={threshold}
+                  onChange={(e) => setThreshold(e.target.value)}
+                  placeholder="Enter amount"
+                  className="input pl-8"
+                  required
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {alertType === 'volume_spike' ? 'Trigger alert when volume exceeds this amount' : 'Trigger alert when liquidity drops below this amount'}
+              </p>
             </div>
           )}
 
-          {/* Email (optional) */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email (Optional)
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              Email Notifications <span className="text-gray-400 font-normal">(Optional)</span>
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Receive email notifications when alert triggers (feature placeholder)
+            <p className="text-xs text-gray-500 mt-2 flex items-start">
+              <AlertCircle className="w-3.5 h-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
+              Get notified via email when this alert triggers (coming soon)
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="card p-4 bg-red-50 border-red-200 animate-fade-in">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1 btn-secondary"
               disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
+              className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create Alert'}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <div className="spinner w-5 h-5 border-2 mr-2"></div>
+                  Creating...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center">
+                  <Bell className="w-5 h-5 mr-2" />
+                  Create Alert
+                </span>
+              )}
             </button>
           </div>
         </form>
